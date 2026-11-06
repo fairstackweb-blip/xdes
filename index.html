@@ -7,11 +7,7 @@
 <title>XDES — Visual Scene Describer</title>
 
 <style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: Arial, sans-serif;
@@ -36,10 +32,7 @@ header {
 
 .logo span { color: #8b7cff; }
 
-.tagline {
-  color: #9298a8;
-  font-size: 13px;
-}
+.tagline { color: #9298a8; font-size: 13px; }
 
 main {
   max-width: 900px;
@@ -70,10 +63,9 @@ h1 {
   display: block;
   border: 2px dashed #454b60;
   border-radius: 12px;
-  padding: 45px 15px;
+  padding: 42px 15px;
   text-align: center;
   cursor: pointer;
-  transition: .2s;
 }
 
 .upload:hover {
@@ -81,11 +73,7 @@ h1 {
   background: #1b1d2b;
 }
 
-.symbol {
-  font-size: 42px;
-  margin-bottom: 15px;
-}
-
+.symbol { font-size: 42px; margin-bottom: 15px; }
 .upload h3 { margin-bottom: 9px; }
 
 .upload p {
@@ -110,9 +98,7 @@ input[type=file] { display: none; }
   background: #08090d;
 }
 
-#mediaPreview video {
-  width: 100%;
-}
+#mediaPreview video { width: 100%; }
 
 .file-info {
   color: #a1a7b5;
@@ -140,15 +126,8 @@ button {
 }
 
 button:hover { background: #6654e5; }
-
-button:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
-
-.secondary {
-  background: #292e3a;
-}
+button:disabled { opacity: .5; cursor: not-allowed; }
+.secondary { background: #292e3a; }
 
 #status {
   color: #a1a7b5;
@@ -158,16 +137,59 @@ button:disabled {
   line-height: 1.6;
 }
 
-.output {
-  display: none;
-}
+.output { display: none; }
 
-.output h3 { margin-bottom: 12px; }
+.output h3 { margin-bottom: 14px; }
 
 .output p {
-  color: #a1a7b5;
-  line-height: 1.6;
+  color: #c4c8d2;
+  line-height: 1.7;
   font-size: 14px;
+}
+
+.result-section { margin-top: 22px; }
+
+.result-section h4 {
+  color: #a99cff;
+  margin-bottom: 10px;
+}
+
+.keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.keyword {
+  background: #292e3a;
+  color: #d8d5ff;
+  padding: 7px 11px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.query-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.query-link {
+  color: #b5aaff;
+  text-decoration: none;
+  background: #202331;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.query-link:hover { background: #303249; }
+
+.copy-button {
+  margin-top: 15px;
+  background: #292e3a;
 }
 
 footer {
@@ -177,11 +199,10 @@ footer {
   font-size: 12px;
 }
 
-@media (max-width: 600px) {
+@media(max-width:600px) {
   header { padding: 20px; }
   main { margin: 35px auto; }
   .panel { padding: 17px; }
-  .upload { padding: 35px 10px; }
 }
 </style>
 </head>
@@ -198,8 +219,8 @@ footer {
 <h1>Understand what's in your media.</h1>
 
 <p class="intro">
-Upload an image, GIF or video. XDES will help generate
-descriptive visual captions and useful search queries.
+Upload an image, GIF or video. XDES uses AI to describe
+visual content and generate useful search queries.
 </p>
 
 <section class="panel">
@@ -207,9 +228,8 @@ descriptive visual captions and useful search queries.
 <label class="upload" for="media">
   <div class="symbol">＋</div>
   <h3>Upload your media</h3>
-  <p>Click here to select an image, GIF or video</p>
-  <p>Images: JPG, PNG, WEBP, GIF and more</p>
-  <p>Videos: MP4, MOV, MKV, AVI, WMV, FLV, WebM, 3GP and more</p>
+  <p>Select an image, GIF or video</p>
+  <p>JPG, PNG, WEBP, GIF, MP4, MOV, MKV, AVI, WEBM and more</p>
 </label>
 
 <input
@@ -229,25 +249,49 @@ descriptive visual captions and useful search queries.
 </div>
 
 <div id="status">
-Your selected media stays in your browser.
+Your media stays in your browser. No upload to our server.
 </div>
 
 </section>
 
 <section class="panel output" id="output">
-  <h3>Analysis</h3>
-  <p id="result">
-    The AI analysis engine will be connected in the next development step.
-  </p>
+
+<h3>AI Analysis</h3>
+
+<div class="result-section">
+  <h4>Visual Description</h4>
+  <p id="caption"></p>
+</div>
+
+<div class="result-section">
+  <h4>Search Keywords</h4>
+  <div class="keyword-list" id="keywords"></div>
+</div>
+
+<div class="result-section">
+  <h4>Suggested Google Searches</h4>
+  <div class="query-list" id="queries"></div>
+</div>
+
+<button class="copy-button" id="copy">Copy analysis</button>
+
 </section>
 
 </main>
 
 <footer>
-XDES · Browser-based media analysis
+XDES · Browser-based AI media analysis
 </footer>
 
-<script>
+<script type="module">
+
+import {
+  Florence2ForConditionalGeneration,
+  AutoProcessor,
+  AutoTokenizer,
+  RawImage
+} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+
 const input = document.getElementById("media");
 const preview = document.getElementById("preview");
 const mediaPreview = document.getElementById("mediaPreview");
@@ -255,13 +299,11 @@ const fileInfo = document.getElementById("fileInfo");
 const analyze = document.getElementById("analyze");
 const remove = document.getElementById("remove");
 const status = document.getElementById("status");
-
-let currentURL = null;
-let currentFile = null;
+const output = document.getElementById("output");
 
 const imageExtensions = [
   "jpg", "jpeg", "png", "webp", "gif",
-  "bmp", "avif", "tif", "tiff", "svg"
+  "bmp", "avif", "tif", "tiff"
 ];
 
 const videoExtensions = [
@@ -271,9 +313,34 @@ const videoExtensions = [
   "vob", "mxf", "asf", "rm", "rmvb"
 ];
 
-input.addEventListener("change", () => {
-  const file = input.files[0];
+let currentURL = null;
+let currentFile = null;
+let currentType = null;
 
+let model = null;
+let processor = null;
+let tokenizer = null;
+let modelLoading = false;
+
+const MODEL_ID = "onnx-community/Florence-2-base-ft";
+
+function setStatus(message) {
+  status.textContent = message;
+}
+
+function clearPreview() {
+  if (currentURL) URL.revokeObjectURL(currentURL);
+
+  currentURL = null;
+  currentFile = null;
+  currentType = null;
+
+  mediaPreview.innerHTML = "";
+}
+
+input.addEventListener("change", () => {
+
+  const file = input.files[0];
   if (!file) return;
 
   const extension = file.name.split(".").pop().toLowerCase();
@@ -287,13 +354,13 @@ input.addEventListener("change", () => {
     videoExtensions.includes(extension);
 
   if (!isImage && !isVideo) {
-    status.textContent = "Unsupported file format.";
+    setStatus("Unsupported file format.");
     input.value = "";
     return;
   }
 
   if (file.size > 100 * 1024 * 1024) {
-    status.textContent = "File is too large. Maximum size is 100 MB.";
+    setStatus("Maximum file size is 100 MB.");
     input.value = "";
     return;
   }
@@ -301,31 +368,29 @@ input.addEventListener("change", () => {
   clearPreview();
 
   currentFile = file;
+  currentType = isImage ? "image" : "video";
   currentURL = URL.createObjectURL(file);
 
   if (isImage) {
+
     const img = document.createElement("img");
     img.src = currentURL;
-    img.alt = "Selected image preview";
-
-    img.onerror = () => {
-      status.textContent =
-        "The image was accepted, but its preview could not be displayed.";
-    };
+    img.alt = "Selected image";
 
     mediaPreview.appendChild(img);
 
   } else {
-    const video = document.createElement("video");
 
+    const video = document.createElement("video");
     video.src = currentURL;
     video.controls = true;
     video.playsInline = true;
     video.preload = "metadata";
 
     video.addEventListener("error", () => {
-      status.textContent =
-        "Video accepted, but your browser cannot decode this format or codec. We will work on local video conversion later.";
+      setStatus(
+        "File accepted, but your browser cannot play this video codec. Video conversion will be added later."
+      );
     });
 
     mediaPreview.appendChild(video);
@@ -333,49 +398,269 @@ input.addEventListener("change", () => {
 
   fileInfo.textContent =
     file.name + " · " +
-    (file.size / (1024 * 1024)).toFixed(2) + " MB";
+    (file.size / 1024 / 1024).toFixed(2) + " MB";
 
   preview.style.display = "block";
+  output.style.display = "none";
   analyze.disabled = false;
 
-  status.textContent =
+  setStatus(
     isImage
-      ? "Image loaded successfully."
-      : "Video file accepted. Checking browser playback support...";
+      ? "Image ready for AI analysis."
+      : "Video preview ready if supported. Video AI analysis is coming in the next stage."
+  );
+
 });
 
-function clearPreview() {
-  if (currentURL) {
-    URL.revokeObjectURL(currentURL);
+async function loadModel() {
+
+  if (model) return;
+
+  if (modelLoading) {
+    throw new Error("The AI model is already loading. Please wait.");
   }
 
-  currentURL = null;
-  currentFile = null;
-  mediaPreview.innerHTML = "";
+  modelLoading = true;
+
+  try {
+
+    setStatus("Preparing Florence-2 AI model...");
+
+    let modelOptions;
+
+    if (navigator.gpu) {
+
+      setStatus("Loading AI model using WebGPU...");
+
+      modelOptions = {
+        dtype: {
+          embed_tokens: "fp16",
+          vision_encoder: "fp16",
+          encoder_model: "q4",
+          decoder_model_merged: "q4"
+        },
+        device: "webgpu"
+      };
+
+    } else {
+
+      setStatus("WebGPU unavailable. Loading the CPU-compatible model...");
+
+      modelOptions = {
+        dtype: "q8"
+      };
+
+    }
+
+    model = await Florence2ForConditionalGeneration.from_pretrained(
+      MODEL_ID,
+      modelOptions
+    );
+
+    processor = await AutoProcessor.from_pretrained(MODEL_ID);
+    tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
+
+    setStatus("AI model loaded successfully.");
+
+  } finally {
+
+    modelLoading = false;
+
+  }
 }
 
+function extractKeywords(caption) {
+
+  const ignored = new Set([
+    "this", "that", "with", "from", "there",
+    "their", "they", "them", "have", "has",
+    "into", "onto", "over", "under", "while",
+    "where", "which", "what", "when", "being",
+    "about", "also", "some", "many", "very",
+    "more", "than", "then", "and", "the",
+    "for", "are", "was", "were", "is", "a",
+    "an", "of", "in", "on", "at", "to",
+    "by", "it", "as", "be", "or"
+  ]);
+
+  return [...new Set(
+    caption.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, " ")
+      .split(/\s+/)
+      .filter(word =>
+        word.length > 2 &&
+        !ignored.has(word) &&
+        !/^\d+$/.test(word)
+      )
+  )].slice(0, 12);
+
+}
+
+function showResults(caption) {
+
+  document.getElementById("caption").textContent = caption;
+
+  const keywords = extractKeywords(caption);
+  const keywordContainer = document.getElementById("keywords");
+
+  keywordContainer.innerHTML = "";
+
+  keywords.forEach(word => {
+    const tag = document.createElement("span");
+    tag.className = "keyword";
+    tag.textContent = word;
+    keywordContainer.appendChild(tag);
+  });
+
+  const queries = [
+    caption + " scene",
+    caption + " video scene details",
+    caption + " performer credits",
+    caption + " scene identification credits"
+  ];
+
+  const queryContainer = document.getElementById("queries");
+  queryContainer.innerHTML = "";
+
+  queries.forEach(query => {
+
+    const link = document.createElement("a");
+
+    link.className = "query-link";
+    link.textContent = query;
+    link.href =
+      "https://www.google.com/search?q=" +
+      encodeURIComponent(query);
+
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    queryContainer.appendChild(link);
+
+  });
+
+  output.style.display = "block";
+
+}
+
+analyze.addEventListener("click", async () => {
+
+  if (!currentFile) return;
+
+  if (currentType === "video") {
+    setStatus(
+      "Video AI analysis will be added in the next stage. For now, try an image or GIF."
+    );
+    return;
+  }
+
+  analyze.disabled = true;
+  output.style.display = "none";
+
+  try {
+
+    await loadModel();
+
+    setStatus("Reading your image...");
+
+    const image = await RawImage.fromBlob(currentFile);
+
+    const task = "<MORE_DETAILED_CAPTION>";
+
+    const visionInputs = await processor(image);
+    const prompts = processor.construct_prompts(task);
+    const textInputs = tokenizer(prompts);
+
+    setStatus("Florence-2 is analyzing your image...");
+
+    const generatedIds = await model.generate({
+      ...textInputs,
+      ...visionInputs,
+      max_new_tokens: 150
+    });
+
+    const generatedText = tokenizer.batch_decode(
+      generatedIds,
+      { skip_special_tokens: false }
+    )[0];
+
+    const result = processor.post_process_generation(
+      generatedText,
+      task,
+      image.size
+    );
+
+    const caption =
+      result[task] ||
+      "The model could not generate a description.";
+
+    showResults(caption);
+
+    setStatus("Analysis completed successfully.");
+
+  } catch (error) {
+
+    console.error(error);
+
+    setStatus(
+      "Analysis failed: " +
+      (error.message || "Unknown error") +
+      ". Check your browser console if the problem continues."
+    );
+
+  } finally {
+
+    analyze.disabled = false;
+
+  }
+
+});
+
 remove.addEventListener("click", () => {
+
   clearPreview();
 
   input.value = "";
   preview.style.display = "none";
+  output.style.display = "none";
 
-  document.getElementById("output").style.display = "none";
+  analyze.disabled = true;
 
-  status.textContent = "Select another file to get started.";
+  setStatus("Select another file to get started.");
+
 });
 
-analyze.addEventListener("click", () => {
-  if (!currentFile) return;
+document.getElementById("copy").addEventListener("click", async () => {
 
-  document.getElementById("output").style.display = "block";
+  const caption = document.getElementById("caption").textContent;
 
-  document.getElementById("result").textContent =
-    "Your media is ready. The AI model will be connected in our next development step.";
+  const keywords = extractKeywords(caption);
 
-  status.textContent =
-    "Waiting for the AI analysis engine.";
+  const queries = [...document.querySelectorAll(".query-link")]
+    .map(link => link.textContent);
+
+  const text = [
+    "XDES ANALYSIS",
+    "",
+    "VISUAL DESCRIPTION",
+    caption,
+    "",
+    "KEYWORDS",
+    keywords.join(", "),
+    "",
+    "GOOGLE SEARCH QUERIES",
+    ...queries
+  ].join("\n");
+
+  try {
+    await navigator.clipboard.writeText(text);
+    setStatus("Analysis copied to clipboard.");
+  } catch {
+    setStatus("Could not copy automatically. Please select and copy the text.");
+  }
+
 });
+
 </script>
 
 </body>
