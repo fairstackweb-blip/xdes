@@ -67,6 +67,7 @@ h1 {
 }
 
 .upload {
+  display: block;
   border: 2px dashed #454b60;
   border-radius: 12px;
   padding: 45px 15px;
@@ -80,7 +81,7 @@ h1 {
   background: #1b1d2b;
 }
 
-.upload .symbol {
+.symbol {
   font-size: 42px;
   margin-bottom: 15px;
 }
@@ -90,24 +91,10 @@ h1 {
 .upload p {
   color: #9298a8;
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.8;
 }
 
 input[type=file] { display: none; }
-
-button {
-  background: #7867f5;
-  color: white;
-  border: none;
-  padding: 13px 22px;
-  border-radius: 9px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-button:hover { background: #6654e5; }
-button:disabled { opacity: .5; cursor: not-allowed; }
 
 #preview {
   display: none;
@@ -115,10 +102,16 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   text-align: center;
 }
 
-#preview img, #preview video {
+#mediaPreview img,
+#mediaPreview video {
   max-width: 100%;
   max-height: 420px;
   border-radius: 10px;
+  background: #08090d;
+}
+
+#mediaPreview video {
+  width: 100%;
 }
 
 .file-info {
@@ -135,6 +128,24 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   flex-wrap: wrap;
 }
 
+button {
+  background: #7867f5;
+  color: white;
+  border: none;
+  padding: 13px 22px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover { background: #6654e5; }
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
 .secondary {
   background: #292e3a;
 }
@@ -144,6 +155,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   font-size: 13px;
   margin-top: 17px;
   text-align: center;
+  line-height: 1.6;
 }
 
 .output {
@@ -165,6 +177,12 @@ footer {
   font-size: 12px;
 }
 
+@media (max-width: 600px) {
+  header { padding: 20px; }
+  main { margin: 35px auto; }
+  .panel { padding: 17px; }
+  .upload { padding: 35px 10px; }
+}
 </style>
 </head>
 
@@ -180,36 +198,39 @@ footer {
 <h1>Understand what's in your media.</h1>
 
 <p class="intro">
-Upload an image, GIF or short video. XDES will help generate
+Upload an image, GIF or video. XDES will help generate
 descriptive visual captions and useful search queries.
 </p>
 
 <section class="panel">
 
-  <label class="upload" for="media">
-    <div class="symbol">＋</div>
-    <h3>Upload your media</h3>
-    <p>Click here to select an image, GIF or video</p>
-    <p>Supported formats: JPG, PNG, WEBP, GIF, MP4 and WEBM</p>
-  </label>
+<label class="upload" for="media">
+  <div class="symbol">＋</div>
+  <h3>Upload your media</h3>
+  <p>Click here to select an image, GIF or video</p>
+  <p>Images: JPG, PNG, WEBP, GIF and more</p>
+  <p>Videos: MP4, MOV, MKV, AVI, WMV, FLV, WebM, 3GP and more</p>
+</label>
 
-  <input
-    type="file"
-    id="media"
-    accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
-  >
+<input
+  type="file"
+  id="media"
+  accept="image/*,video/*,.mp4,.m4v,.mov,.avi,.mkv,.wmv,.flv,.webm,.mpeg,.mpg,.3gp,.ts,.mts,.m2ts,.ogv,.vob,.mxf,.asf,.rm,.rmvb"
+>
 
-  <div id="preview">
-    <div id="mediaPreview"></div>
-    <div class="file-info" id="fileInfo"></div>
+<div id="preview">
+  <div id="mediaPreview"></div>
+  <div class="file-info" id="fileInfo"></div>
 
-    <div class="actions">
-      <button id="analyze" disabled>Analyze media</button>
-      <button class="secondary" id="remove">Remove file</button>
-    </div>
+  <div class="actions">
+    <button id="analyze" disabled>Analyze media</button>
+    <button class="secondary" id="remove">Remove file</button>
   </div>
+</div>
 
-  <div id="status">Your selected media stays in your browser.</div>
+<div id="status">
+Your selected media stays in your browser.
+</div>
 
 </section>
 
@@ -238,21 +259,34 @@ const status = document.getElementById("status");
 let currentURL = null;
 let currentFile = null;
 
+const imageExtensions = [
+  "jpg", "jpeg", "png", "webp", "gif",
+  "bmp", "avif", "tif", "tiff", "svg"
+];
+
+const videoExtensions = [
+  "mp4", "m4v", "mov", "avi", "mkv",
+  "wmv", "flv", "webm", "mpeg", "mpg",
+  "3gp", "ts", "mts", "m2ts", "ogv",
+  "vob", "mxf", "asf", "rm", "rmvb"
+];
+
 input.addEventListener("change", () => {
   const file = input.files[0];
 
   if (!file) return;
 
-  const allowed = [
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-    "image/gif",
-    "video/mp4",
-    "video/webm"
-  ];
+  const extension = file.name.split(".").pop().toLowerCase();
 
-  if (!allowed.includes(file.type)) {
+  const isImage =
+    file.type.startsWith("image/") ||
+    imageExtensions.includes(extension);
+
+  const isVideo =
+    file.type.startsWith("video/") ||
+    videoExtensions.includes(extension);
+
+  if (!isImage && !isVideo) {
     status.textContent = "Unsupported file format.";
     input.value = "";
     return;
@@ -269,29 +303,51 @@ input.addEventListener("change", () => {
   currentFile = file;
   currentURL = URL.createObjectURL(file);
 
-  if (file.type.startsWith("image/")) {
+  if (isImage) {
     const img = document.createElement("img");
     img.src = currentURL;
-    img.alt = "Selected media preview";
+    img.alt = "Selected image preview";
+
+    img.onerror = () => {
+      status.textContent =
+        "The image was accepted, but its preview could not be displayed.";
+    };
+
     mediaPreview.appendChild(img);
+
   } else {
     const video = document.createElement("video");
+
     video.src = currentURL;
     video.controls = true;
     video.playsInline = true;
+    video.preload = "metadata";
+
+    video.addEventListener("error", () => {
+      status.textContent =
+        "Video accepted, but your browser cannot decode this format or codec. We will work on local video conversion later.";
+    });
+
     mediaPreview.appendChild(video);
   }
 
   fileInfo.textContent =
-    file.name + " · " + (file.size / (1024 * 1024)).toFixed(2) + " MB";
+    file.name + " · " +
+    (file.size / (1024 * 1024)).toFixed(2) + " MB";
 
   preview.style.display = "block";
   analyze.disabled = false;
-  status.textContent = "Media loaded successfully.";
+
+  status.textContent =
+    isImage
+      ? "Image loaded successfully."
+      : "Video file accepted. Checking browser playback support...";
 });
 
 function clearPreview() {
-  if (currentURL) URL.revokeObjectURL(currentURL);
+  if (currentURL) {
+    URL.revokeObjectURL(currentURL);
+  }
 
   currentURL = null;
   currentFile = null;
@@ -300,9 +356,12 @@ function clearPreview() {
 
 remove.addEventListener("click", () => {
   clearPreview();
+
   input.value = "";
   preview.style.display = "none";
+
   document.getElementById("output").style.display = "none";
+
   status.textContent = "Select another file to get started.";
 });
 
@@ -312,9 +371,10 @@ analyze.addEventListener("click", () => {
   document.getElementById("output").style.display = "block";
 
   document.getElementById("result").textContent =
-    "Your media is ready. The AI model will be connected in our next step.";
+    "Your media is ready. The AI model will be connected in our next development step.";
 
-  status.textContent = "Waiting for the AI analysis engine.";
+  status.textContent =
+    "Waiting for the AI analysis engine.";
 });
 </script>
 
